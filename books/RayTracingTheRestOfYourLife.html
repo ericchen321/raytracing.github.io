@@ -261,7 +261,7 @@ location.
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
-    
+
     ...
 
     int sqrt_spp = int(sqrt(samples_per_pixrel));
@@ -288,7 +288,7 @@ location.
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside of pixels]
 
 
-If we compare the results from without stratification: 
+If we compare the results from without stratification:
 
   ![Image 1: Cornell box, no stratification](../images/img-3.01-cornell-no-strat.png class=pixel)
 
@@ -312,30 +312,143 @@ want to stratify.
 One Dimensional MC Integration
 ====================================================================================================
 
-Integration is all about computing areas and volumes, so we could have framed
-chapter [A Simple Monte Carlo Program] in an integral form if we wanted to make it maximally
-confusing. But sometimes integration is the most natural and clean way to formulate things.
-Rendering is often such a problem.
+Our Buffon Needle example is a way of calculating $\pi$ by solving for the ratio of the area of the
+circle and the area of the square:
 
+    $$ \frac{area(circle)}{area(square)} $$
+
+We picked a bunch of random points in the unit square and counted the fraction of them that also
+lied inside of the unit circle. This fraction gave us a number that tended toward $\frac{\pi}{4}$ as
+more points were added. This can also be thought of as approximating the area inside of the unit
+circle because if we solve for $\pi$, then we're also solving for the area of the circle:
+
+    $$ \frac{area(circle)}{area(square)} = \frac{\pi}{4} $$
+    $$ \frac{area(circle)}{(2r)^2} = \frac{\pi}{4} $$
+    $$ area(circle) = \frac{\pi}{4} 4r^2 $$
+    $$ area(circle) = \pi r^2 $$
+
+We choose a circle with radius $r = 1$ and get:
+
+    $$ area(circle) = \pi $$
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+#include "rtweekend.h"
+
+#include <iostream>
+#include <iomanip>
+#include <math.h>
+#include <stdlib.h>
+
+int main() {
+    int N = 100000;
+    int inside_circle = 0;
+    for (int i = 0; i < N; i++) {
+        auto x = random_double(-1,1);
+        auto y = random_double(-1,1);
+        if (x*x + y*y < 1)
+            inside_circle++;
+    }
+    std::cout << std::fixed << std::setprecision(12);
+    std::cout << "Estimated area of unit circle = " << (4.0 * inside_circle) / N << '\n';
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
+
+
+If we have a list of inputs $X$ that contains members $x_i$, and a function $F(X)$ that takes
+members from the list $X$ and produces an output list $Y$ with members $y_i$:
+
+    $$ y_i = f(x_i) $$
+
+then we could solve for the arithematic mean--the average--of the list $Y$ with the following:
+
+    $$ Average(Y) = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
+    $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
+    $$ = Average(F(X)) $$
+    $$ = \bar F $$
+
+If the values of $x_i$ are chosen randomly from a continuous interval $[a,b]$ such that
+$ a \leq x_i \leq b $ for all values of $i$. Then the average of $F(X)$ will approximate the
+average of the continuous function $f(x)$ over the the same interval $ a \leq x \leq b $.
+
+    $$ y = f(x) $$
+    $$ Average(y) \Big|_{a \leq x \leq b} \approx Average(y_i) \Big|_{a \leq x_i \leq b} $$
+
+If we take the number of samples $N$ and take the limit as $N$ goes to $\infty$, then we get the following:
+
+    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{a \leq x_i \leq b} $$
+    $$ Average(y) \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{a \leq x_i \leq b} $$
+
+The average value of $f(X)$ over the continuous interval $[a, b]$ can be perfectly represented by
+summing over an infinite number of random points within that interval. As this number of points
+approaches $\infty$ the average of the outputs approaches the exact answer. This is a MC algorithm.
+
+We don't need to take random points to solve for the exact answer over the interval. We also have
+the option to place the sampling points at distinct locations. If we had $N$ samples over an
+interval $[a,b]$ then we could choose equally spaced points throughout:
+
+    $$ x_i = a + i \Delta x $$
+    $$ \Delta x = \frac{b - a}{N} $$
+
+Then solving for their average:
+
+    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{x_i = a + i \Delta x} $$
+    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{x_i = a + i \Delta x} $$
+    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
+        \Big|_{x_i = a + i \Delta x} $$
+
+Take the limit as $N$ approaches $\infty$
+
+    $$ Average(y) \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
+        f(x_i) \Delta x \Big|_{x_i = a + \Delta x * i} $$
+
+This is just a regular integral:
+
+    $$ Average(y) \Big|_{a \leq x \leq b} = \frac{1}{b - a} \int_{a}^{b}
+        f(x) dx $$
+    $$ \bar f = \frac{1}{b - a} \int_{a}^{b} f(x) dx $$
+
+Both the integral of a function and a MC over that function can be used to solve for the average
+over a specific interval. While integration solves for the sum of infinitesmally small slices of the
+interval, a MC will solve for the sum of infinitely many random points within that interval. The
+average over an interval is intrinsically linked with the area under the curve in that interval.
+
+    $$ \bar f = \frac{1}{b - a} \cdot area(f(x), a, b) $$
+
+Counting the number of points that fall inside of an object isn't the only way to measure it's
+average or area. Integration is also a common mathematical tool for this purpose. If a closed form
+exists for a problem, integration is frequently the most natural and clean way to formulate things.
+
+I think a couple of examples will help.
 
 Integrating x²
 ---------------
+<div class='together'>
 Let’s look at a classic integral:
 
-$$ I = \int_{0}^{2} x^2 dx $$
+    $$ I = \int_{0}^{2} x^2 dx $$
 
-<div class='together'>
-In computer sciency notation, we might write this as:
+We could solve this using integration:
 
-$$ I = \text{area}( x^2, 0, 2 ) $$
+    $$ I = \frac{1}{3} x^3 \Big|_{0}^{2} $$
+    $$ I = \frac{1}{3} (2^3 - 0^3) $$
+    $$ I = \frac{8}{3} $$
+
+Or, we could solve the integral using a MC. In computer sciency notation, we might write this as:
+
+    $$ I = \text{area}( x^2, 0, 2 ) $$
 
 We could also write it as:
 
-$$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
+    $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
 </div>
 
 <div class='together'>
-This suggests a MC approach:
+The MC approach:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -353,32 +466,56 @@ This suggests a MC approach:
             sum += x*x;
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "I = " << 2 * sum/N << '\n';
+        std::cout << "I = " << 2.0 * (sum / N) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
+    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating x^2]
 </div>
 
-This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. We could
-also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In graphics, we
-often have functions we can evaluate but can’t write down explicitly, or functions we can only
-probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
-two books is -- we don’t know what color is seen in every direction, but we can statistically
-estimate it in any given dimension.
-
-One problem with the random program we wrote in the first two books is that small light sources
-create too much noise. This is because our uniform sampling doesn’t sample these light sources often
-enough. Light sources are only sampled if a ray scatters toward them, but this can be unlikely for a
-small light, or a light that is far away. We could lessen this problem if we sent more random
-samples toward this light, but this will cause the scene to be inaccurately bright. We can remove
-this inaccuracy by downweighting these samples to adjust for the over-sampling. How we do that
-adjustment? To do that, we will need the concept of a _probability density function_.
+This, as expected, produces approximately the exact answer we get with integration, i.e. $I = 8/3$.
+You could rightly point to this example and say that integration is actually a lot less work. That
+might be true in the case where the function is $f = x^2$, but there exists lots of functions where
+it might be simpler to solve for the MC than for the integration, like $f = sin^5(x)$. We could also
+use the MC for functions where an analytically integration does not exist, like $\log(\sin(x))$. In
+graphics, we often have functions that we can write down explicitly but that have a complicated
+analytic integration, or, just as often, we have functions that can be evaluated but that can't be
+written down explicitly, and we will frequently find ourselves with a function that can _only_ be
+evaluated probabilistically. The function `ray_color` from the first two books is an example of a
+function that can only be determined probabilistically. We can’t know what color can be seen from
+any given place in all directions, but we can statistically estimate which color can be seen from
+_this_ place and in _a_ direction.
 
 
 Density Functions
 ------------------
 <div class='together'>
-First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
+The `ray_color` function that we wrote in the first two books, while elegant in it's simplicity, has
+a fairly _major_ problem. Small light sources create too much noise. This is because our uniform
+sampling doesn’t sample these light sources often enough. Light sources are only sampled if a ray
+scatters toward them, but this can be unlikely for a small light or a light that is far away. If
+the background color is black, then the only real sources of light in the scene are from the lights
+that are actually placed about the scene. So there might be two rays that intersect next to each
+other on a material, one that is randomly reflected toward the light and one that is not. The ray
+that is reflected toward the light will appear a very bright color, whereas the other ray will
+appear very dark. When the two of them should really be somewhere in the middle. We could lessen
+this problem if we sent _more_ random samples toward this light, but this will cause the scene to be
+inaccurately bright.
+
+We usually trace rays from the camera out into the scene, but imagine if we traced rays from the
+light source out into the source. It would start as a very bright ray, which would lose energy with
+each successive bounce, eventually arriving at the camera, having been dimmed and colored by its
+reflections off materials. Now, imagine if the ray was forced to bounce toward the camera as soon as
+it could. This ray would appear too bright because it wouldn't have decayed its energy over multiple
+bounces. This is analogous to sending more random samples toward the light. It would go a long way
+toward solving our problem of having a bright pixel next to a dark pixel, but it would then just
+make _all_ of our pixels bright.
+
+We can remove this inaccuracy by downweighting these samples to adjust for the over-sampling. How we
+do that adjustment? Well, we'll first need to understand the concept of a
+_probability density function_. But to understand the concept of a _probability density function_,
+we'll first need to know what a _density function_ is.
+
+A _density function_ is just the continuous version of a histogram. Here’s an example of a histogram
 from the histogram Wikipedia page:
 
   ![Figure [histogram]: Histogram example](../images/fig-3.03-histogram.jpg)
@@ -386,26 +523,36 @@ from the histogram Wikipedia page:
 </div>
 
 <div class='together'>
-If we added data for more trees, the histogram would get taller. If we divided the data into more
-bins, it would get shorter. A discrete density function differs from a histogram in that it
-normalizes the frequency y-axis to a fraction or percentage (just a fraction times 100). A
-continuous histogram, where we take the number of bins to infinity, can’t be a fraction because the
-height of all the bins would drop to zero. A density function is one where we take the bins and
-adjust them so they don’t get shorter as we add more bins. For the case of the tree histogram above
-we might try:
+If we added data for more trees, the number of bins would stay the same, but each would get taller.
+If we divided the data into more bins, we'd have more bins, but each would get shorter. If we took
+the number of bins and raised it infinity, we'd have an infinite number of zero-height bins. To
+solve for this, a discrete density function differs from a histogram in that it normalizes the
+y-axis to a fraction or percentage (just a fraction times 100) of the total. So a density function
+is a continuous histogram where all of the values are normalized against a total. For the case of
+the tree histogram above we could try to create a _density function_ by:
 
-  $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+    $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}
+                                {(H-H’)} $$
 </div>
 
 <div class='together'>
-That would work! We could interpret that as a statistical predictor of a tree’s height:
+That would work! If we had a specific tree we wanted to know the height of, we could create a
+_probability function_ that would tell us how likely it is for our tree to fall within a specific
+bin.
+
+    $$ \text{probability of Bin i} = \frac{\text{Number of trees in Bin i}}
+                                          {\text{Number of trees total}} $$
+
+If we combined our _probability function_ and our _density function_ we could interpret that as a
+statistical predictor of a tree’s height:
 
   $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{bin-height}\cdot(H-H’)$$
 </div>
 
-If we wanted to know about the chances of being in a span of multiple bins, we would sum.
-
-A _probability density function_, henceforth _PDF_, is that fractional histogram made continuous.
+Indeed, with this continuous probability function we can now say the likelihood that a tree has a
+height that spans multiple bins. This is  _probability density function_, henceforth _PDF_, is a
+continuous function that explains how likely a specific result is, and can integrated over to
+determine how likely a result is over that integral. It is a fractional histogram made continuous.
 
 
 Constructing a PDF
