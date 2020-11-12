@@ -27,7 +27,7 @@ severely limited by a missing mathematical foundation. In this volume, I assume 
 a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
 be diving into the math of creating a very serious ray tracer. When you are done, you should be
 well equipped to use and modify the various commercial ray tracers found in many popular industries,
-such as the movie, television, product design, and architecture industries.
+such as the movie, television, product design, and architecture.
 
 There are many many things I do not cover in this short volume. There are many ways of writing Monte
 Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays (instead deciding
@@ -313,23 +313,28 @@ One Dimensional MC Integration
 ====================================================================================================
 
 Our Buffon Needle example is a way of calculating $\pi$ by solving for the ratio of the area of the
-circle and the area of the square:
+circle and the area of the inscribing square:
 
-    $$ \frac{area(circle)}{area(square)} $$
+    $$ \frac{\text{area}(circle)}{\text{area}(square)} = \frac{\pi}{4} $$
 
-We picked a bunch of random points in the unit square and counted the fraction of them that also
-lied inside of the unit circle. This fraction gave us a number that tended toward $\frac{\pi}{4}$ as
-more points were added. This can also be thought of as approximating the area inside of the unit
-circle because if we solve for $\pi$, then we're also solving for the area of the circle:
+We picked a bunch of random points in the inscribing square and counted the fraction of them that
+were also in the unit circle. This fraction was an estimate that tended toward $\frac{\pi}{4}$ as
+more points were added. If we didn't know the area of a circle, we could still solve for it using
+the above ratio. We know that the ratio of areas of the unit circle and the inscribed square is
+$\frac{\pi}{4}$, and we know that the area of a inscribed square is $4r^2$, so we could then use
+those two quanties to get the area of our circle:
 
-    $$ \frac{area(circle)}{area(square)} = \frac{\pi}{4} $$
-    $$ \frac{area(circle)}{(2r)^2} = \frac{\pi}{4} $$
-    $$ area(circle) = \frac{\pi}{4} 4r^2 $$
-    $$ area(circle) = \pi r^2 $$
+    $$ \frac{\text{area}(circle)}{\text{area}(square)} = \frac{\pi}{4} $$
+    $$ \frac{\text{area}(circle)}{(2r)^2} = \frac{\pi}{4} $$
+    $$ \text{area}(circle) = \frac{\pi}{4} 4r^2 $$
+    $$ \text{area}(circle) = \pi r^2 $$
 
 We choose a circle with radius $r = 1$ and get:
 
-    $$ area(circle) = \pi $$
+    $$ \text{area}(circle) = \pi $$
+
+Our work above is equally valid as a means to solve for $pi$ as it is a means to solve for the area
+of a circle:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 #include "rtweekend.h"
@@ -354,72 +359,94 @@ int main() {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
 
+Let's take a step back and think about our MC algorithm a little bit more generally.
 
-If we have a list of inputs $X$ that contains members $x_i$, and a function $F(X)$ that takes
-members from the list $X$ and produces an output list $Y$ with members $y_i$:
+If we assume that we have all of the following:
+
+1. A list of values $X$ that contains members $x_i$:
+
+    $$ X = (x_0, x_1, ..., x_{N-1})  $$
+
+2. A continuous function $f(x)$ that takes members from the list:
 
     $$ y_i = f(x_i) $$
 
-then we could solve for the arithematic mean--the average--of the list $Y$ with the following:
+3. A function $F(X)$ that takes $X$ as input and produces an output list $Y$:
 
-    $$ Average(Y) = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
+    $$ Y = F(X) $$
+
+4. Where output list $Y$ has members $y_i$:
+
+    $$ Y = (y_0, y_1, ..., y_{N-1})  $$
+
+If we assume all of the above, then we could solve for the arithematic mean--the average--of the
+list $Y$ with the following:
+
+    $$ \text{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
     $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
-    $$ = Average(F(X)) $$
-    $$ = \bar F $$
+    $$ = E[F(X)] $$
 
-If the values of $x_i$ are chosen randomly from a continuous interval $[a,b]$ such that
-$ a \leq x_i \leq b $ for all values of $i$. Then the average of $F(X)$ will approximate the
-average of the continuous function $f(x)$ over the the same interval $ a \leq x \leq b $.
+Where $E[Y]$ is referred to as the _expected value_ of $Y$. If the values of $x_i$ are chosen
+randomly from a continuous interval $[a,b]$ such that $ a \leq x_i \leq b $ for all values of $i$,
+then $E[F(X)]$ will approximate the average of the continuous function $f(x)$ over the the same
+interval $ a \leq x \leq b $.
 
-    $$ y = f(x) $$
-    $$ Average(y) \Big|_{a \leq x \leq b} \approx Average(y_i) \Big|_{a \leq x_i \leq b} $$
-
-If we take the number of samples $N$ and take the limit as $N$ goes to $\infty$, then we get the following:
-
-    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
-        \Big|_{a \leq x_i \leq b} $$
-    $$ Average(y) \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx E[F(X)] \Big|_{a \leq x_i \leq b} $$
+    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
         \Big|_{a \leq x_i \leq b} $$
 
-The average value of $f(X)$ over the continuous interval $[a, b]$ can be perfectly represented by
-summing over an infinite number of random points within that interval. As this number of points
-approaches $\infty$ the average of the outputs approaches the exact answer. This is a MC algorithm.
+If we take the number of samples $N$ and take the limit as $N$ goes to $\infty$, then we get the
+following:
 
-We don't need to take random points to solve for the exact answer over the interval. We also have
-the option to place the sampling points at distinct locations. If we had $N$ samples over an
-interval $[a,b]$ then we could choose equally spaced points throughout:
+    $$ E[f(x)] \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{a \leq x_i \leq b} $$
+
+Within the continuous interval $[a,b]$, the expected value of continuous function $f(x)$ can be
+perfectly represented by summing an infinite number of random points within the interval. As this
+number of points approaches $\infty$ the average of the outputs tends to the exact answer. This is a
+MC algorithm.
+
+Taking random sampling points isn't our only way to solve for the expected value over an interval.
+We can also choose where we place our sampling points. If we had $N$ samples over an interval
+$[a,b]$ then we could choose to equally space points throughout:
 
     $$ x_i = a + i \Delta x $$
     $$ \Delta x = \frac{b - a}{N} $$
 
-Then solving for their average:
+Then solving for their expected value:
 
-    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
         \Big|_{x_i = a + i \Delta x} $$
-    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
+    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
         \Big|_{x_i = a + i \Delta x} $$
-    $$ Average(y) \Big|_{a \leq x \leq b} \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
+    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
         \Big|_{x_i = a + i \Delta x} $$
 
 Take the limit as $N$ approaches $\infty$
 
-    $$ Average(y) \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
+    $$ E[f(x)] \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
         f(x_i) \Delta x \Big|_{x_i = a + \Delta x * i} $$
 
-This is just a regular integral:
+This is, of course, just a regular integral:
 
-    $$ Average(y) \Big|_{a \leq x \leq b} = \frac{1}{b - a} \int_{a}^{b}
+    $$ E[f(x)] \Big|_{a \leq x \leq b} = \frac{1}{b - a} \int_{a}^{b}
         f(x) dx $$
-    $$ \bar f = \frac{1}{b - a} \int_{a}^{b} f(x) dx $$
 
-Both the integral of a function and a MC over that function can be used to solve for the average
-over a specific interval. While integration solves for the sum of infinitesmally small slices of the
-interval, a MC will solve for the sum of infinitely many random points within that interval. The
-average over an interval is intrinsically linked with the area under the curve in that interval.
+The integral of a function is the area under the curve over that interval:
 
-    $$ \bar f = \frac{1}{b - a} \cdot area(f(x), a, b) $$
+    $$ \text{area}(f(x), a, b) = \int_{a}^{b} f(x) dx$$
 
-Counting the number of points that fall inside of an object isn't the only way to measure it's
+Therefore, the average over an interval is intrinsically linked with the area under the curve in
+that interval.
+
+    $$ E[f(x)] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+        
+
+Both the integral of a function and a MC sampling of that function can be used to solve for the
+average over a specific interval. While integration solves for the average with the sum of
+infinitely many infinitesmally small slices of the interval, a MC algorithm will approximate the
+same average by solving the sum of ever increasing random sample points within the interval.
+Counting the number of points that fall inside of an object isn't the only way to measure its
 average or area. Integration is also a common mathematical tool for this purpose. If a closed form
 exists for a problem, integration is frequently the most natural and clean way to formulate things.
 
@@ -444,7 +471,10 @@ Or, we could solve the integral using a MC. In computer sciency notation, we mig
 
 We could also write it as:
 
+    $$ E[f(x)] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+    $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot \text{area}( x^2, 0, 2 ) $$
     $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
+
 </div>
 
 <div class='together'>
@@ -472,46 +502,48 @@ The MC approach:
     [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating x^2]
 </div>
 
-This, as expected, produces approximately the exact answer we get with integration, i.e. $I = 8/3$.
-You could rightly point to this example and say that integration is actually a lot less work. That
-might be true in the case where the function is $f = x^2$, but there exists lots of functions where
-it might be simpler to solve for the MC than for the integration, like $f = sin^5(x)$. We could also
-use the MC for functions where an analytically integration does not exist, like $\log(\sin(x))$. In
-graphics, we often have functions that we can write down explicitly but that have a complicated
-analytic integration, or, just as often, we have functions that can be evaluated but that can't be
-written down explicitly, and we will frequently find ourselves with a function that can _only_ be
-evaluated probabilistically. The function `ray_color` from the first two books is an example of a
-function that can only be determined probabilistically. We can’t know what color can be seen from
-any given place in all directions, but we can statistically estimate which color can be seen from
-_this_ place and in _a_ direction.
+This, as expected, produces approximately the exact answer we get with integration, _i.e._
+$I = 8/3$. You could rightly point to this example and say that integration is actually a lot less
+work. That might be true in the case where the function is $f(x) = x^2$, but there exist many
+functions where it might be simpler to solve for the MC than for the integration, like
+$f(x) = sin^5(x)$. We could also use the MC algorithm for functions where an analytical integration
+does not exist, like $f(x) = \log(\sin(x))$. In graphics, we often have functions that we can write
+down explicitly but that have a complicated analytic integration, or, just as often, we have functions
+that _can_ be evaluated but that _can't_ be written down explicitly, and we will frequently find
+ourselves with a function that can _only_ be evaluated probabilistically. The function `ray_color`
+from the first two books is an example of a function that can only be determined probabilistically.
+We can’t know what color can be seen from any given place in all directions, but we can
+statistically estimate which color can be seen from one particular place, for a single particular
+direction.
 
 
 Density Functions
 ------------------
 <div class='together'>
-The `ray_color` function that we wrote in the first two books, while elegant in it's simplicity, has
+The `ray_color` function that we wrote in the first two books, while elegant in its simplicity, has
 a fairly _major_ problem. Small light sources create too much noise. This is because our uniform
 sampling doesn’t sample these light sources often enough. Light sources are only sampled if a ray
-scatters toward them, but this can be unlikely for a small light or a light that is far away. If
+scatters toward them, but this can be unlikely for a small light, or a light that is far away. If
 the background color is black, then the only real sources of light in the scene are from the lights
-that are actually placed about the scene. So there might be two rays that intersect next to each
-other on a material, one that is randomly reflected toward the light and one that is not. The ray
-that is reflected toward the light will appear a very bright color, whereas the other ray will
-appear very dark. When the two of them should really be somewhere in the middle. We could lessen
-this problem if we sent _more_ random samples toward this light, but this will cause the scene to be
-inaccurately bright.
+that are actually placed about the scene. So there might be two rays that intersect at nearby points
+on a surface. One that is randomly reflected toward the light and one that is not. The ray that is
+reflected toward the light will appear a very bright color. The ray that is reflected to somewhere
+else will appear a very dark color. The two intensities should really be somewhere in the middle.
+We could lessen this problem if we sent _more_ random samples toward this light, but this will cause
+the scene to be inaccurately bright.
 
-We usually trace rays from the camera out into the scene, but imagine if we traced rays from the
-light source out into the source. It would start as a very bright ray, which would lose energy with
-each successive bounce, eventually arriving at the camera, having been dimmed and colored by its
-reflections off materials. Now, imagine if the ray was forced to bounce toward the camera as soon as
-it could. This ray would appear too bright because it wouldn't have decayed its energy over multiple
-bounces. This is analogous to sending more random samples toward the light. It would go a long way
-toward solving our problem of having a bright pixel next to a dark pixel, but it would then just
-make _all_ of our pixels bright.
+For any given ray, we usually trace from the camera, through the scene, and terminate at a light.
+But imagine if we traced this same ray from the light source, through the scene, and terminated at
+the camera. This ray would start with a bright intensity and would lose energy with each
+successive bounce around the scene. It would ultimately arrive at the camera, having been dimmed and
+colored by its reflections off various surfaces. Now, imagine if this ray was forced to bounce
+toward the camera as soon as it could. It would appear inaccurately bright because it hadn't been
+dimmed by successive bounces. This is analogous to sending more random samples toward the light. It
+would go a long way toward solving our problem of having a bright pixel next to a dark pixel, but it
+would then just make _all_ of our pixels bright.
 
-We can remove this inaccuracy by downweighting these samples to adjust for the over-sampling. How we
-do that adjustment? Well, we'll first need to understand the concept of a
+We can remove this inaccuracy by downweighting those samples to adjust for the over-sampling. How do
+we do this adjustment? Well, we'll first need to understand the concept of a
 _probability density function_. But to understand the concept of a _probability density function_,
 we'll first need to know what a _density function_ is.
 
@@ -523,15 +555,16 @@ from the histogram Wikipedia page:
 </div>
 
 <div class='together'>
-If we added data for more trees, the number of bins would stay the same, but each would get taller.
-If we divided the data into more bins, we'd have more bins, but each would get shorter. If we took
-the number of bins and raised it infinity, we'd have an infinite number of zero-height bins. To
-solve for this, a discrete density function differs from a histogram in that it normalizes the
-y-axis to a fraction or percentage (just a fraction times 100) of the total. So a density function
-is a continuous histogram where all of the values are normalized against a total. For the case of
-the tree histogram above we could try to create a _density function_ by:
+If we had more trees in our data source, the number of bins would stay the same, but each bin would
+a higher frequency of tree. If we divided the data into more bins, we'd have more bins, but each
+bin would have a lower frequency of tree. If we took the number of bins and raised it to infinity,
+we'd have an infinite number of zero-frequency bins. To solve for this, a
+_discrete density function_ differs from a histogram in that it normalizes the y-axis to a fraction
+or percentage of the total. So a density function is a continuous histogram where all of the values
+are normalized against a total. For the case of the tree histogram above we could try to create a
+_density function_ by:
 
-    $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}
+    $$ \text{bin-density} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}
                                 {(H-H’)} $$
 </div>
 
@@ -543,17 +576,17 @@ bin.
     $$ \text{probability of Bin i} = \frac{\text{Number of trees in Bin i}}
                                           {\text{Number of trees total}} $$
 
-If we combined our _probability function_ and our _density function_ we could interpret that as a
+If we combined our _probability function_ and our _density function_, we could interpret that as a
 statistical predictor of a tree’s height:
 
-  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{bin-height}\cdot(H-H’)$$
+  $$ \text{Probability a random tree is between } H \text{ and } H’ = 
+        \text{bin-density}\cdot(H-H’)$$
 </div>
 
-Indeed, with this continuous probability function we can now say the likelihood that a tree has a
-height that spans multiple bins. This is  _probability density function_, henceforth _PDF_, is a
-continuous function that explains how likely a specific result is, and can integrated over to
-determine how likely a result is over that integral. It is a fractional histogram made continuous.
-
+Indeed, with this continuous probability function, we can now say the likelihood that any given tree
+has a height that places it within any arbitrary span of multiple bins. This is a
+_probability density function_ (henceforth _PDF_). In short, a PDF is a continuous function that
+can integrated over to determine how likely a result is over an integral. 
 
 Constructing a PDF
 -------------------
