@@ -377,31 +377,32 @@ If we assume that we have all of the following:
 
 4. Where output list $Y$ has members $y_i$:
 
-    $$ Y = (y_0, y_1, ..., y_{N-1})  $$
+    $$ Y = (y_0, y_1, ..., y_{N-1}) = (f(x_0), f(x_1), ..., f(x_{N-1})) $$
 
 If we assume all of the above, then we could solve for the arithematic mean--the average--of the
-list $Y$ with the following:
+list $Y$ with the following: 
 
     $$ \text{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
     $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
     $$ = E[F(X)] $$
 
-Where $E[Y]$ is referred to as the _expected value_ of $Y$. If the values of $x_i$ are chosen
+Where $E[Y]$ is referred to as the _expected value of_ $Y$. If the values of $x_i$ are chosen
 randomly from a continuous interval $[a,b]$ such that $ a \leq x_i \leq b $ for all values of $i$,
-then $E[F(X)]$ will approximate the average of the continuous function $f(x)$ over the the same
-interval $ a \leq x \leq b $.
+then $E[F(X)]$ will approximate the average of the continuous function $f(x')$ over the the same
+interval $ a \leq x' \leq b $.
 
-    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx E[F(X)] \Big|_{a \leq x_i \leq b} $$
-    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
-        \Big|_{a \leq x_i \leq b} $$
+    $$ E[f(x') | a \leq x' \leq b] \approx E[F(X) | X = 
+        \{\small x_i | a \leq x_i \leq b \normalsize \} ] $$
+    $$ \approx E[Y = \{\small y_i = f(x_i) | a \leq x_i \leq b \normalsize \} ] $$
+
+    $$ \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
 
 If we take the number of samples $N$ and take the limit as $N$ goes to $\infty$, then we get the
 following:
 
-    $$ E[f(x)] \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
-        \Big|_{a \leq x_i \leq b} $$
+    $$ E[f(x') | a \leq x' \leq b]  = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
 
-Within the continuous interval $[a,b]$, the expected value of continuous function $f(x)$ can be
+Within the continuous interval $[a,b]$, the expected value of continuous function $f(x')$ can be
 perfectly represented by summing an infinite number of random points within the interval. As this
 number of points approaches $\infty$ the average of the outputs tends to the exact answer. This is a
 MC algorithm.
@@ -415,22 +416,21 @@ $[a,b]$ then we could choose to equally space points throughout:
 
 Then solving for their expected value:
 
-    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
         \Big|_{x_i = a + i \Delta x} $$
-    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
         \Big|_{x_i = a + i \Delta x} $$
-    $$ E[f(x)] \Big|_{a \leq x \leq b} \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
         \Big|_{x_i = a + i \Delta x} $$
 
 Take the limit as $N$ approaches $\infty$
 
-    $$ E[f(x)] \Big|_{a \leq x \leq b} = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
+    $$ E[f(x') | a \leq x' \leq b] = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
         f(x_i) \Delta x \Big|_{x_i = a + \Delta x * i} $$
 
 This is, of course, just a regular integral:
 
-    $$ E[f(x)] \Big|_{a \leq x \leq b} = \frac{1}{b - a} \int_{a}^{b}
-        f(x) dx $$
+    $$ E[f(x') | a \leq x' \leq b] = \frac{1}{b - a} \int_{a}^{b} f(x) dx $$
 
 The integral of a function is the area under the curve over that interval:
 
@@ -439,7 +439,7 @@ The integral of a function is the area under the curve over that interval:
 Therefore, the average over an interval is intrinsically linked with the area under the curve in
 that interval.
 
-    $$ E[f(x)] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
         
 
 Both the integral of a function and a MC sampling of that function can be used to solve for the
@@ -454,6 +454,7 @@ I think a couple of examples will help.
 
 Integrating x²
 ---------------
+
 <div class='together'>
 Let’s look at a classic integral:
 
@@ -471,7 +472,7 @@ Or, we could solve the integral using a MC. In computer sciency notation, we mig
 
 We could also write it as:
 
-    $$ E[f(x)] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
     $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot \text{area}( x^2, 0, 2 ) $$
     $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
 
@@ -590,40 +591,67 @@ can integrated over to determine how likely a result is over an integral.
 
 Constructing a PDF
 -------------------
-Let’s make a _PDF_ and use it a bit to understand it more. Suppose I want a random number $r$
-between 0 and 2 whose probability is proportional to itself: $r$. We would expect the PDF $p(r)$ to
-look something like the figure below, but how high should it be?
+Let’s make a _PDF_ and use it a bit to understand it more. Suppose I have a random number $r$
+that is contained between $r=0$ and $r=2$ and whose probability is proportional to the value of $r$
+itself. We would expect the PDF $p(r)$ to look something like this:
 
   ![Figure [linear-pdf]: A linear PDF](../images/fig-3.04-linear-pdf.jpg)
 
 <div class='together'>
-The height is just $p(2)$. What should that be? We could reasonably make it anything by
-convention, and we should pick something that is convenient. Just as with histograms we can sum up
-(integrate) the region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
+The PDF $p(r)$ is a linear function that starts with $0$ at $r=0$ and monotonically increases to its
+highest point at $p(2)$ for $r=2$. What is the value of $p(2)$? What is the value of $p(r)$? Maybe
+$p(2)$ is 2? The PDF increases linearly from 0 to 2, so guessing that the value of $p(2)$ is 2
+seems reasonable. At least it looks like it can't be 0. Remember that the PDF is a probability
+function. We are constraining the PDF so that it is wholly contained within $r=0$ and $r=2$. The PDF
+represents the continuous density function for a probabilistic list. If we know that everything in
+that list in contained within 0 and 2, we can say that the probability of getting a value between 0
+and 2 is 100%. Therefore, the area under the curve must sum to 1:
 
-  $$ \text{Probability } x_0 < r < x_1 = C \cdot \text{area}(p(r), x_0, x_1) $$
+    $$ \text{area}(p(r), 0, 2) = 1 $$
+
+All linear functions can be represented as a constant term multiplied by the variable.
+
+    $$ p(r) = C \cdot r $$
+
+We need to solve for the value of $C$. We can use integration to work backwards.
+
+    $$ 1 = \text{area}(p(r), 0, 2) $$
+    $$ = \int_{0}^{2} C \cdot r dr $$
+    $$ = C \cdot \int_{0}^{2} r dr $$
+    $$ = C \cdot \frac{r^2}{2} \Big|_{0}^{2} $$
+    $$ = C ( \frac{2^2}{2} - \frac{0}{2} ) $$
+    $$ C = \frac{1}{2} $$
+
+That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
+region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
+
+    $$ \text{Probability} (r | x_0 < r < x_1 ) = \text{area}(p(r), x_0, x_1) $$
+    $$ \text{Probability} (r | x_0 < r < x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
+
+To confirm your work, integrate over the region $r=0$ to $r=2$, you should get a probability of 1.
 </div>
 
 <div class='together'>
-where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, and that is exactly
-what is done in probability. We also know the probability $r$ has the value 1 somewhere, so for this
-case
+After spending enough time with PDFs you might start referring to a PDF as the probability that a
+variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, The
+probability that a variable is a specific value is always zero. If you ask "given the PDF $p(r)$,
+what are the odds that $r=1$"? For all PDFs this value is always zero. A PDF can only tell you the
+probability that a variable will fall within an interval. If the interval you're checking against is
+a constant number, then the PDF will always return a zero probability.
 
-  $$ \text{area}(p(r), 0, 2) = 1 $$
+    $$ \text{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
+    $$ = P(r) \Big|_{x}^{x} $$
+    $$ = P(x) - P(x) $$
+    $$ = 0 $$
+
+Finding the probability of a region surrounding x may not be zero:
+
+    $$ \text{Probability} (r | x - \Delta x < r < x + \Delta x ) = 
+         \text{area}(p(r), x - \Delta x, x + \Delta x) $$
+     $$ = P(x + \Delta x) - P(x - \Delta x) $$
+
 </div>
 
-<div class='together'>
-Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other constant $C'$
-
-  $$
-  area(C'r, 0, 2) = \int_{0}^{2} C' r dr
-                  = \frac{C'r^2}{2} \biggr|_{r=0}^{r=2}
-                  = \frac{C' \cdot 2^2}{2} - \frac{C' \cdot 0^2}{2}
-                  = 2C'
-  $$
-
-So $p(r) = r/2$.
-</div>
 
 How do we generate a random number with that PDF $p(r)$? For that we will need some more machinery.
 Don’t worry this doesn’t go on forever!
