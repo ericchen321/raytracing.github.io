@@ -631,6 +631,7 @@ region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
 To confirm your work, integrate over the region $r=0$ to $r=2$, you should get a probability of 1.
 </div>
 
+
 <div class='together'>
 After spending enough time with PDFs you might start referring to a PDF as the probability that a
 variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, The
@@ -652,38 +653,59 @@ Finding the probability of a region surrounding x may not be zero:
 
 </div>
 
-
-How do we generate a random number with that PDF $p(r)$? For that we will need some more machinery.
-Don’t worry this doesn’t go on forever!
+Choosing our Samples
+--------------------
+If we have a PDF for the function that we care about, then we have the probability that the function
+will return a value within a particular interval. We can use this to determine where we should
+sample. Remember that this started as a quest to determine the best way to sample a scene so that we
+wouldn't get very bright pixels next to very dark pixels. If we have a PDF for the scene, then we
+can probabilisticallt steer our samples toward the light without making the image inaccurately
+bright. How do we generate a random number with that PDF $p(r)$? For that we will need some more
+machinery. Don’t worry this doesn’t go on forever!
 
 <div class='together'>
-Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
-able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. This is no
-longer a uniform PDF. The PDF of $e$ will be bigger near 1 than it is near 0 (squaring a number
-between 0 and 1 makes it smaller). To convert this general observation to a function, we need the
-cumulative probability distribution function $P(x)$:
+Our random number generator `random_double()` produces a random double between 0 and 1. The number
+generator is uniform between 0 and 1, so the double has an equal likelikhood of being any number
+between 0 and 1. If we pass the output from our random number generator to a variable,
+`double d = random_double()`, then we should be able to find some function $f(d)$ that gives us what
+we want. Suppose $e = f(d) = d^2$. While `random_double()` is uniform, taking this distribuition and
+passing it through the function `f(d)` makes it nonuniform. `f(d)` is no longer a uniform PDF. The
+PDF of $e$ will be bigger near 1 than it is near 0. To convert this general observation to a
+function, we need the _Cumulative Distribution Function_ $P(x)$:
 
-  $$ P(x) = \text{area}(p, -\infty, x) $$
+    $$ P(x) =  \int_{-\infty}^{x}  p(x') dx' $$
+
+Or,
+
+    $$ P(x) = \text{area}(p(x), -\infty, x) $$
 </div>
 
 <div class='together'>
-Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
-is zero. For our example PDF $p(r) = r/2$, the $P(x)$ is:
+Where we don't explicitly set a probability, we assume to be zero. So for the example above,
+$p(r) = 0$, for $r < 0$ and $r > 2$. _i.e._, the probability of an $r$ there is zero. We can rewrite
+our $p(r)$ in piecewise fashion:
 
-  $$ P(x) = 0 : x < 0                 $$
-  $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
-  $$ P(x) = 1 : x > 2                 $$
+    $$ p(r)=\begin{cases}0 & r < 0 \\ \frac{r}{2} & 0 < r < 2 \\ 0 & r > 2  \\  \end{cases} $$ 
+
+If we take the integration outlined above, we get the piecewise $P(r)$:
+
+    $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 < r < 2 \\ 1 & r > 2  \\  \end{cases} $$
+
+The _Probability Density Function_ (PDF) is the probability function that explains how likely an
+interval of numbers is to be chosen. The _Cumulative Distribution Function_ (CDF) is the
+distribution function that explains how likely all numbers smaller than its input is to be chosen.
+To go from the PDF to the CDF, you integrate from $-\infty$ to $x$, but to go from the CDF to the
+PDF, all you need to do is take the derivative:
+
+    $$ p(x) = \frac{d}{dx}P(x) $$
 </div>
 
 <div class='together'>
-One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
-function arguments in a program. If we evaluate $P$ at $x = 1.0$, we get:
+If we evaluate the CDF, $P$ at $r = 1.0$, we get:
 
   $$ P(1.0) = \frac{1}{4} $$
-</div>
 
-<div class='together'>
-This says _the probability that a random variable with our PDF is less than one is 25%_. This gives
+This says _a random variable plucked from our PDF has a 25% change of being 1 or lower_. This gives
 rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
 want a function `f()` that when we call it as `f(random_double())` we get a return value with a PDF
 $\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
