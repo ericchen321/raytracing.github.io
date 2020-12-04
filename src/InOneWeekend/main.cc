@@ -16,6 +16,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+#include "cube.h"
 
 #include <iostream>
 
@@ -87,20 +88,76 @@ hittable_list random_scene() {
     return world;
 }
 
+hittable_list scene_with_cube() {
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    point3 center(6, 0.2, 1.7);
+     // diffuse
+    auto albedo = color::random() * color::random();
+    shared_ptr<material> cube_material = make_shared<lambertian>(albedo);
+    world.add(make_shared<cube>(center, 0.8, 0.8, 0.8, 0, 0, 0, cube_material));
+    return world;
+}
+
+hittable_list random_scene_with_cubes() {
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    for (int a = -3; a < 5; a++) {
+        for (int b = -1; b < 3; b++) {
+            auto choose_mat = random_double();
+            point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+            double angle_x = random_double(-30, 30);
+            double angle_y = random_double(-30, 30);
+            double angle_z = random_double(-30, 30);
+
+            if ((center - point3(4, 0.2, 0)).length() > 1.0) {
+                //std::cerr << "center: " << center.e[0] << ' ' << center.e[1] << ' ' << center.e[2] << '\n';
+                shared_ptr<material> cube_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = color::random() * color::random();
+                    cube_material = make_shared<lambertian>(albedo);
+                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = color::random(0.5, 1);
+                    auto fuzz = random_double(0, 0.5);
+                    cube_material = make_shared<metal>(albedo, fuzz);
+                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                } else {
+                    // glass
+                    cube_material = make_shared<dielectric>(1.5);
+                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                }
+            }
+        }
+    }
+
+    return world;
+}
+
 
 int main() {
 
     // Image
 
     const auto aspect_ratio = 16.0 / 9.0;
-    const int image_width = 1200;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 10;
-    const int max_depth = 50;
+    const int max_depth = 12;
 
     // World
 
-    auto world = random_scene();
+    //auto world = random_scene();
+    auto world = random_scene_with_cubes();
 
     // Camera
 

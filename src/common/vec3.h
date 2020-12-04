@@ -154,6 +154,29 @@ inline vec3 random_in_hemisphere(const vec3& normal) {
         return -in_unit_sphere;
 }
 
+/* returns the vector after 3D affine rotation
+ */
+inline vec3 rotate(const vec3& vec, double angle_x_deg, double angle_y_deg, double angle_z_deg) {
+    double angle_x = degrees_to_radians(angle_x_deg);
+    double angle_y = degrees_to_radians(angle_y_deg);
+    double angle_z = degrees_to_radians(angle_z_deg);
+    
+    // after rotate about x-axis
+    double x_0 = vec.e[0];
+    double y_0 = vec.e[1]*cos(angle_x)-vec.e[2]*sin(angle_x);
+    double z_0 = vec.e[1]*sin(angle_x)+vec.e[2]*cos(angle_x);
+    // after rotate about y-axis
+    double x_1 = x_0*cos(angle_y)+z_0*sin(angle_y);
+    double y_1 = y_0;
+    double z_1 = -1.0*x_0*sin(angle_y)+z_0*cos(angle_y);
+    // after rotate about z-axis
+    double x_2 = x_1*cos(angle_z)-y_1*sin(angle_z);
+    double y_2 = x_1*sin(angle_z)+y_1*cos(angle_z);
+    double z_2 = z_1;
+
+    return vec3(x_2, y_2, z_2);
+}
+
 inline vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2*dot(v,n)*n;
 }

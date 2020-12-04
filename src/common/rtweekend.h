@@ -38,6 +38,17 @@ inline double clamp(double x, double min, double max) {
     return x;
 }
 
+inline bool check_equal(double given_val, double check_val, double epsilon) {
+    // Returns true if check_val*(1-epsilon) <= given_val <= check_val*(1+epsilon).
+    // Modified from Matlab scripts prepared for exams
+    if(given_val >= check_val*(1-epsilon) && given_val<=check_val*(1+epsilon)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 inline double random_double() {
     // Returns a random real in [0,1).
     return rand() / (RAND_MAX + 1.0);
