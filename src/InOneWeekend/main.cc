@@ -17,23 +17,45 @@
 #include "material.h"
 #include "sphere.h"
 #include "cube.h"
+#include "light.h"
+#include "light_list.h"
+#include "point_light.h"
 
 #include <iostream>
 
+struct world_and_lights
+{
+    hittable_list world;
+    light_list lights;
+};
 
-color ray_color(const ray& r, const hittable& world, int depth) {
+color ray_color(const ray& r, const world_and_lights& world_and_lights, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
         return color(0,0,0);
 
-    if (world.hit(r, 0.001, infinity, rec)) {
-        ray scattered;
-        color attenuation;
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-            return attenuation * ray_color(scattered, world, depth-1);
-        return color(0,0,0);
+    if (world_and_lights.world.hit(r, 0.001, infinity, rec)) {
+        color color_under_light = color(0,0,0);
+        bool if_not_under_shadow = world_and_lights.lights.compute_color(world_and_lights.world, rec, color_under_light);
+        if (if_not_under_shadow) {
+            // if the hit point is not under shadow, keep tracing
+            ray scattered;
+            color attenuation;
+            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+                // scatter ray is produced, keep tracing
+                return attenuation * ray_color(scattered, world_and_lights, depth-1);
+            }
+            else {
+                // no scatter ray, return color under light
+                return color_under_light;
+            }
+        }
+        else {
+            // if under shadow, return black
+            return color(0,0,0);
+        }
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -42,7 +64,10 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 }
 
 
-hittable_list random_scene() {
+struct world_and_lights random_scene_with_spheres() {
+    struct world_and_lights world_and_lights;
+
+    // create world
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -85,21 +110,60 @@ hittable_list random_scene() {
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-    return world;
+    // create lights
+    light_list lights;
+    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
 }
 
-hittable_list scene_with_cube() {
+struct world_and_lights scene_with_sphere() {
+    struct world_and_lights world_and_lights;
+
+    // create world
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
-    point3 center(6, 0.2, 1.7);
+    point3 center(0, 0.75, 1);
+     // glass
+    shared_ptr<material> sphere_material = make_shared<dielectric>(1.5);
+    world.add(make_shared<sphere>(center, 0.7, sphere_material));
+    
+    // create lights
+    light_list lights;
+    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
+}
+
+struct world_and_lights scene_with_cube() {
+    struct world_and_lights world_and_lights;
+
+    // create world
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    point3 center(0, 0.75, 1);
      // diffuse
     auto albedo = color::random() * color::random();
     shared_ptr<material> cube_material = make_shared<lambertian>(albedo);
-    world.add(make_shared<cube>(center, 0.8, 0.8, 0.8, 0, 0, 0, cube_material));
-    return world;
+    world.add(make_shared<cube>(center, 1.5, 1.5, 1.5, 0, 0, 0, cube_material));
+    
+    // create lights
+    light_list lights;
+    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
 }
 
 hittable_list random_scene_with_cubes() {
@@ -156,8 +220,9 @@ int main() {
 
     // World
 
-    //auto world = random_scene();
-    auto world = random_scene_with_cubes();
+    auto world_and_lights = random_scene_with_spheres();
+    //auto world_and_lights = scene_with_cube();
+    //auto world_and_lights = scene_with_sphere();
 
     // Camera
 
@@ -181,7 +246,7 @@ int main() {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
+                pixel_color += ray_color(r, world_and_lights, max_depth);
             }
             write_color(std::cout, pixel_color, samples_per_pixel);
         }

@@ -30,6 +30,9 @@ set ( SOURCE_ONE_WEEKEND
   src/InOneWeekend/sphere.h
   src/InOneWeekend/triangle.h
   src/InOneWeekend/cube.h
+  src/InOneWeekend/light.h
+  src/InOneWeekend/light_list.h
+  src/InOneWeekend/point_light.h
   src/InOneWeekend/main.cc
 )
 
