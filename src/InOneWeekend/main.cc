@@ -37,24 +37,27 @@ color ray_color(const ray& r, const world_and_lights& world_and_lights, int dept
         return color(0,0,0);
 
     if (world_and_lights.world.hit(r, 0.001, infinity, rec)) {
-        color color_under_light = color(0,0,0);
-        bool if_not_under_shadow = world_and_lights.lights.compute_color(world_and_lights.world, r, rec, color_under_light);
-        if (if_not_under_shadow) {
-            // if the hit point is not under shadow, keep tracing
-            ray scattered;
-            color attenuation;
-            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-                // scatter ray is produced, keep tracing
-                return color_under_light + attenuation * ray_color(scattered, world_and_lights, depth-1);
-            }
-            else {
-                // no scatter ray, return color under light
-                return color_under_light;
-            }
+        // computes local color
+        color color_local = color(0,0,0);
+        bool if_not_under_shadow = world_and_lights.lights.compute_color(world_and_lights.world, r, rec, color_local);
+
+        // sets contribution of global color. if under 
+        // shadow, then little global contribution
+        double contribution = 1.0;
+        if (!if_not_under_shadow) {
+            contribution = 0.4;
+        }
+
+        // if the hit point is not under shadow, keep tracing
+        ray scattered;
+        color attenuation;
+        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+            // scatter ray is produced, keep tracing
+            return color_local + contribution * attenuation * ray_color(scattered, world_and_lights, depth-1);
         }
         else {
-            // if under shadow, return black
-            return color(0,0,0);
+            // no scatter ray, return color under light
+            return color_local;
         }
     }
 
