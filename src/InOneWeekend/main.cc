@@ -20,6 +20,7 @@
 #include "light.h"
 #include "light_list.h"
 #include "point_light.h"
+#include "directional_light.h"
 
 #include <iostream>
 
@@ -139,6 +140,7 @@ struct world_and_lights scene_with_sphere() {
     // create lights
     light_list lights;
     lights.add(make_shared<point_light>(color(1, 1, 1), point3(13, 4, 1)));
+    //lights.add(make_shared<directional_light>(color(1, 1, 1), point3(2, -1, -1)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
@@ -157,12 +159,13 @@ struct world_and_lights scene_with_cube() {
     point3 center(0, 0.75, 1);
     // diffuse
     shared_ptr<material> cube_material = make_shared<lambertian>(color(0.5, 0.1, 0.1));
-    world.add(make_shared<cube>(center, 1.5, 1.5, 1.5, 0, 0, 0, cube_material));
+    world.add(make_shared<cube>(center, 1.5, 3, 1.5, 0, 0, 0, cube_material));
     
     // create lights
     light_list lights;
-    //lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
-    lights.add(make_shared<point_light>(color(1, 1, 1), point3(13, 8, 1)));
+    //lights.add(make_shared<point_light>(color(1, 1, 1), point3(-20, 8, 3)));
+    //lights.add(make_shared<point_light>(color(1, 1, 1), point3(-10, 8, 2)));
+    lights.add(make_shared<directional_light>(color(1, 1, 1), vec3(2, 0, 0)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
@@ -232,8 +235,8 @@ int main() {
 
     // World
 
-    auto world_and_lights = random_scene_with_spheres();
-    //auto world_and_lights = scene_with_cube();
+    //auto world_and_lights = random_scene_with_spheres();
+    auto world_and_lights = scene_with_cube();
     //auto world_and_lights = scene_with_sphere();
     //auto world_and_lights = random_scene_with_cubes();
 
