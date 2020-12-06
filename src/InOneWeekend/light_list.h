@@ -22,19 +22,24 @@ class light_list : public light  {
         void add(shared_ptr<light> light) { lights.push_back(light); }
 
         virtual bool compute_color(
-            const hittable_list& world, const hit_record& rec, color& col) const override;
+            const hittable_list& world, const ray& r, const hit_record& rec, color& col) const override;
             
     public:
         std::vector<shared_ptr<light>> lights;
 };
 
 
-bool light_list::compute_color(const hittable_list& world, const hit_record& rec, color& col) const {
-    color temp_col;
+bool light_list::compute_color(const hittable_list& world, const ray& r, const hit_record& rec, color& col) const {
     auto is_under_light = false;
+    // initialize color
+    col = color(0,0,0);
 
+    color temp_col;
     for (const auto& light : lights) {
-        if (light->compute_color(world, rec, temp_col)) {
+        /* the final color is the sum of colors due to all
+         * light sources
+         */
+        if (light->compute_color(world, r, rec, temp_col)) {
             is_under_light = true;
             col = col + temp_col;
         }

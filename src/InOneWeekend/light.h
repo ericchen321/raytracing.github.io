@@ -9,13 +9,12 @@
 class light {
     public:
         /* computes color at hit point due to light effects, inclduing
-         * shadows, diffuse and specular effects.
-         * sets the color at hit point
+         * shadows, diffuse and specular effects. Uses Blinn model.
+         * sets the color at hit point;
          * returns true if point is not under shadow
-         * uses Blinn model 
          */
         virtual bool compute_color(
-            const hittable_list& world, const hit_record& rec, color& col) const = 0;
+            const hittable_list& world, const ray& r, const hit_record& rec, color& col) const = 0;
 };
 
 #endif

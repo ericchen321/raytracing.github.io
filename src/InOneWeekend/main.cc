@@ -38,14 +38,14 @@ color ray_color(const ray& r, const world_and_lights& world_and_lights, int dept
 
     if (world_and_lights.world.hit(r, 0.001, infinity, rec)) {
         color color_under_light = color(0,0,0);
-        bool if_not_under_shadow = world_and_lights.lights.compute_color(world_and_lights.world, rec, color_under_light);
+        bool if_not_under_shadow = world_and_lights.lights.compute_color(world_and_lights.world, r, rec, color_under_light);
         if (if_not_under_shadow) {
             // if the hit point is not under shadow, keep tracing
             ray scattered;
             color attenuation;
             if (rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
                 // scatter ray is produced, keep tracing
-                return attenuation * ray_color(scattered, world_and_lights, depth-1);
+                return color_under_light + attenuation * ray_color(scattered, world_and_lights, depth-1);
             }
             else {
                 // no scatter ray, return color under light
@@ -112,7 +112,7 @@ struct world_and_lights random_scene_with_spheres() {
 
     // create lights
     light_list lights;
-    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+    lights.add(make_shared<point_light>(color(1, 1, 1), point3(20, 6, 3)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
@@ -129,13 +129,13 @@ struct world_and_lights scene_with_sphere() {
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
     point3 center(0, 0.75, 1);
-     // glass
-    shared_ptr<material> sphere_material = make_shared<dielectric>(1.5);
+    // diffuse
+    shared_ptr<material> sphere_material = make_shared<lambertian>(color(0.5, 0.1, 0.1));
     world.add(make_shared<sphere>(center, 0.7, sphere_material));
     
     // create lights
     light_list lights;
-    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+    lights.add(make_shared<point_light>(color(1, 1, 1), point3(13, 4, 1)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
@@ -152,21 +152,24 @@ struct world_and_lights scene_with_cube() {
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
     point3 center(0, 0.75, 1);
-     // diffuse
-    auto albedo = color::random() * color::random();
-    shared_ptr<material> cube_material = make_shared<lambertian>(albedo);
+    // diffuse
+    shared_ptr<material> cube_material = make_shared<lambertian>(color(0.5, 0.1, 0.1));
     world.add(make_shared<cube>(center, 1.5, 1.5, 1.5, 0, 0, 0, cube_material));
     
     // create lights
     light_list lights;
-    lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+    //lights.add(make_shared<point_light>(color::random(), point3(-20, 8, 3)));
+    lights.add(make_shared<point_light>(color(1, 1, 1), point3(13, 8, 1)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
     return world_and_lights;
 }
 
-hittable_list random_scene_with_cubes() {
+struct world_and_lights random_scene_with_cubes() {
+    struct world_and_lights world_and_lights;
+
+    // create world
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -204,7 +207,13 @@ hittable_list random_scene_with_cubes() {
         }
     }
 
-    return world;
+    // create lights
+    light_list lights;
+    lights.add(make_shared<point_light>(color::random(), point3(10, 4, 3)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
 }
 
 
@@ -216,13 +225,14 @@ int main() {
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 10;
-    const int max_depth = 12;
+    const int max_depth = 20;
 
     // World
 
     auto world_and_lights = random_scene_with_spheres();
     //auto world_and_lights = scene_with_cube();
     //auto world_and_lights = scene_with_sphere();
+    //auto world_and_lights = random_scene_with_cubes();
 
     // Camera
 

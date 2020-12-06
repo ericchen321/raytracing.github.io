@@ -22,6 +22,15 @@ class material {
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const = 0;
+
+        /* get the material's color.
+         * returns true if the material has a color, false otherwise
+         * sets the given color to the material's color; if no color then
+         * set it to (0, 0, 0)
+         */
+        virtual bool get_color(
+            color& col
+        ) const = 0;
 };
 
 
@@ -43,6 +52,13 @@ class lambertian : public material {
             return true;
         }
 
+        virtual bool get_color(
+            color& col
+        ) const override {
+            col = albedo;
+            return true;
+        }
+
     public:
         color albedo;
 };
@@ -59,6 +75,13 @@ class metal : public material {
             scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
             attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
+        }
+
+        virtual bool get_color(
+            color& col
+        ) const override {
+            col = albedo;
+            return true;
         }
 
     public:
@@ -91,6 +114,13 @@ class dielectric : public material {
 
             scattered = ray(rec.p, direction);
             return true;
+        }
+
+        virtual bool get_color(
+            color& col
+        ) const override {
+            col = color(0,0,0);
+            return false;
         }
 
     public:
