@@ -185,7 +185,7 @@ struct world_and_lights random_scene_with_cubes() {
     for (int a = -3; a < 5; a++) {
         for (int b = -1; b < 3; b++) {
             auto choose_mat = random_double();
-            point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+            point3 center(a + 0.9*random_double(), 0.6, b + 0.9*random_double());
             double angle_x = random_double(-30, 30);
             double angle_y = random_double(-30, 30);
             double angle_z = random_double(-30, 30);
@@ -198,17 +198,17 @@ struct world_and_lights random_scene_with_cubes() {
                     // diffuse
                     auto albedo = color::random() * color::random();
                     cube_material = make_shared<lambertian>(albedo);
-                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                    world.add(make_shared<cube>(center, 0.6, 0.6, 0.6, angle_x, angle_y, angle_z, cube_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = color::random(0.5, 1);
                     auto fuzz = random_double(0, 0.5);
                     cube_material = make_shared<metal>(albedo, fuzz);
-                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                    world.add(make_shared<cube>(center, 0.6, 0.6, 0.6, angle_x, angle_y, angle_z, cube_material));
                 } else {
                     // glass
                     cube_material = make_shared<dielectric>(1.5);
-                    world.add(make_shared<cube>(center, 0.4, 0.4, 0.4, angle_x, angle_y, angle_z, cube_material));
+                    world.add(make_shared<cube>(center, 0.6, 0.6, 0.6, angle_x, angle_y, angle_z, cube_material));
                 }
             }
         }
@@ -216,7 +216,7 @@ struct world_and_lights random_scene_with_cubes() {
 
     // create lights
     light_list lights;
-    lights.add(make_shared<point_light>(color::random(), point3(10, 4, 3)));
+    lights.add(make_shared<point_light>(color(1, 1, 1), point3(10, 4, 3)));
 
     world_and_lights.world = world;
     world_and_lights.lights = lights;
@@ -249,6 +249,67 @@ struct world_and_lights scene_with_torus() {
     return world_and_lights;
 }
 
+struct world_and_lights random_scene_with_everything() {
+    struct world_and_lights world_and_lights;
+
+    // create world
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    for (int a = -3; a < 5; a++) {
+        for (int b = -1; b < 3; b++) {
+            auto choose_mat = random_double();
+            point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+
+            if ((center - point3(4, 0.2, 0)).length() > 0.9) {
+                shared_ptr<material> sphere_material;
+                shared_ptr<material> cube_material;
+                shared_ptr<material> torus_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = color::random() * color::random();
+                    torus_material = make_shared<lambertian>(albedo);
+                    vec3 torus_normal(random_double(), random_double(), random_double());
+                    world.add(make_shared<torus>(center, torus_normal, 0.4, 0.15, torus_material));
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = color::random(0.5, 1);
+                    auto fuzz = random_double(0, 0.5);
+                    cube_material = make_shared<metal>(albedo, fuzz);
+                    double angle_x = random_double(-30, 30);
+                    double angle_y = random_double(-30, 30);
+                    double angle_z = random_double(-30, 30);
+                    world.add(make_shared<cube>(center, 0.2, 0.2, 0.2, angle_x, angle_y, angle_z, cube_material));
+                } else {
+                    // glass
+                    sphere_material = make_shared<dielectric>(1.5);
+                    world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                }
+            }
+        }
+    }
+
+    auto material1 = make_shared<dielectric>(1.5);
+    world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
+
+    auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+    world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+
+    auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+    world.add(make_shared<torus>(point3(4, 1, 0), vec3(1, 1, -1), 4.0, 2.0, material3));
+
+    // create lights
+    light_list lights;
+    lights.add(make_shared<point_light>(color(1, 1, 1), point3(20, 6, 3)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
+}
+
 
 int main() {
 
@@ -258,20 +319,21 @@ int main() {
     const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 10;
-    const int max_depth = 20;
+    const int max_depth = 10;
 
     // World
 
     //auto world_and_lights = random_scene_with_spheres();
     //auto world_and_lights = scene_with_cube();
     //auto world_and_lights = scene_with_sphere();
-    //auto world_and_lights = random_scene_with_cubes();
-    auto world_and_lights = scene_with_torus();
+    auto world_and_lights = random_scene_with_cubes();
+    //auto world_and_lights = scene_with_torus();
+    //auto world_and_lights = random_scene_with_everything();
 
     // Camera
 
-    point3 lookfrom(9,6,3);
-    point3 lookat(6, 0.8, 1);
+    point3 lookfrom(13,2,3);
+    point3 lookat(0, 0, 0);
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
