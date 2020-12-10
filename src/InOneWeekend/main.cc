@@ -17,6 +17,7 @@
 #include "material.h"
 #include "sphere.h"
 #include "cube.h"
+#include "torus.h"
 #include "light.h"
 #include "light_list.h"
 #include "point_light.h"
@@ -222,6 +223,32 @@ struct world_and_lights random_scene_with_cubes() {
     return world_and_lights;
 }
 
+struct world_and_lights scene_with_torus() {
+    struct world_and_lights world_and_lights;
+
+    // create world
+    hittable_list world;
+
+    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+    point3 center(6, 0.8, 1);
+    vec3 normal(0.2, 1, -0.6);
+    // diffuse
+    shared_ptr<material> torus_material = make_shared<lambertian>(color(0.2, 0.2, 0.8));
+    shared_ptr<torus> torus_obj = make_shared<torus>(center, normal, 0.8, 0.1, torus_material);
+    world.add(torus_obj);
+    
+    // create lights
+    light_list lights;
+    //lights.add(make_shared<point_light>(color(1, 1, 1), point3(13, 4, 1)));
+    lights.add(make_shared<directional_light>(color(1, 1, 1), point3(-1, -1, 1)));
+
+    world_and_lights.world = world;
+    world_and_lights.lights = lights;
+    return world_and_lights;
+}
+
 
 int main() {
 
@@ -236,14 +263,15 @@ int main() {
     // World
 
     //auto world_and_lights = random_scene_with_spheres();
-    auto world_and_lights = scene_with_cube();
+    //auto world_and_lights = scene_with_cube();
     //auto world_and_lights = scene_with_sphere();
     //auto world_and_lights = random_scene_with_cubes();
+    auto world_and_lights = scene_with_torus();
 
     // Camera
 
-    point3 lookfrom(13,2,3);
-    point3 lookat(0,0,0);
+    point3 lookfrom(9,6,3);
+    point3 lookat(6, 0.8, 1);
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;

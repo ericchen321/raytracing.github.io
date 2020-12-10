@@ -188,5 +188,13 @@ inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
     return r_out_perp + r_out_parallel;
 }
 
+inline double distance(const vec3& a, const vec3& b) {
+    // Returns the Euclidian distance between a and b
+    double diff_x = a.e[0] - b.e[0];
+    double diff_y = a.e[1] - b.e[1];
+    double diff_z = a.e[2] - b.e[2];
+    double dist = std::sqrt(pow(diff_x, 2)+pow(diff_y, 2)+pow(diff_z, 2));
+    return dist;
+}
 
 #endif
